@@ -24,6 +24,7 @@ plugins {
     id("com.avast.gradle.docker-compose") version "0.16.8"
     id("org.jlleitschuh.gradle.ktlint") version "10.1.0" apply false
     id("org.jlleitschuh.gradle.ktlint-idea") version "10.1.0"
+    id("org.sonarqube") version "3.0"
 }
 
 allprojects {
@@ -47,6 +48,20 @@ tasks {
     }
 }
 
+val sonarExclusions= "**/generated/**, **/*.java, **/test/**, **/testFixtures/**"
+
+sonarqube {
+    properties {
+        property("sonar.sourceEncoding", "UTF-8")
+        property("sonar.projectKey", "catalog")
+        property("sonar.host.url", "https://sonarqube.croquis.com")
+        property("sonar.login", "38faff48377799326a20132b2f088f0b4a6f9213")
+        property("sonar.exclusions", sonarExclusions)
+        property("sonar.test.inclusions", "**/*Test.kt")
+        property("sonar.coverage.exclusions", "$sonarExclusions, **/config/*")
+    }
+}
+
 subprojects {
     apply(plugin = "kotlin")
     apply(plugin = "jacoco")
@@ -66,6 +81,14 @@ subprojects {
         testImplementation("io.kotest:kotest-framework-datatest:${kotestVersion}")
         testImplementation("io.kotest:kotest-extensions-spring:4.4.3")
         testImplementation("io.mockk:mockk:1.12.1")
+    }
+
+    sonarqube {
+        properties {
+            property("sonar.sources", "src")
+            property ("sonar.junit.reportPaths", "${project.buildDir}/test-results/test")
+            property ("sonar.coverage.jacoco.xmlReportPaths", "${project.buildDir}/jacoco/jacoco.xml")
+        }
     }
 
     tasks.withType<KotlinCompile> {

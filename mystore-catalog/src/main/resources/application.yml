@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: mystore-catalog
+  profiles:
+    default: local
+
+server:
+  #  port:
+  shutdown: graceful
+  compression:
+    enabled: true
+
+zigzag:
+  server:
+    catalog:
+      url: "http://catalog.service.alpha.zigzag.kr:9142"

@@ -1,0 +1,4 @@
+zigzag:
+  server:
+    catalog:
+      url: "http://catalog.service.zigzag.kr:9142"
