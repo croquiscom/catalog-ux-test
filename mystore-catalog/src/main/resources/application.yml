@@ -10,7 +10,12 @@ server:
   compression:
     enabled: true
 
+logging:
+  level:
+    root: info
+
 zigzag:
+  service_name: service-catalog-ux
   server:
     catalog:
       url: "http://catalog.service.alpha.zigzag.kr:9142"

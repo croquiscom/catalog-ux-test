@@ -48,7 +48,7 @@ tasks {
     }
 }
 
-val sonarExclusions= "**/generated/**, **/*.java, **/test/**, **/testFixtures/**"
+val sonarExclusions = "**/generated/**, **/*.java, **/test/**, **/testFixtures/**"
 
 sonarqube {
     properties {
@@ -71,10 +71,20 @@ subprojects {
 
     java.sourceCompatibility = JavaVersion.VERSION_11
 
+    ext {
+        set("logstashLogbackVersion", "7.2")
+        set("sentryVersion", "1.7.30")
+    }
+    val logbackVersion = "1.2.0"
+    val logbackJsonVersion = "0.1.5"
     val kotestVersion = "4.6.0"
 
     dependencies {
         testImplementation("org.springframework.boot:spring-boot-starter-test")
+        implementation("ch.qos.logback:logback-core:${logbackVersion}")
+        implementation("ch.qos.logback:logback-classic:${logbackVersion}")
+        implementation("ch.qos.logback:logback-access:${logbackVersion}")
+        implementation("ch.qos.logback.contrib:logback-jackson:${logbackJsonVersion}")
         testImplementation("io.kotest:kotest-runner-junit5:${kotestVersion}")
         testImplementation("io.kotest:kotest-assertions-core:${kotestVersion}")
         testImplementation("io.kotest:kotest-property:${kotestVersion}")
@@ -99,8 +109,8 @@ subprojects {
     sonarqube {
         properties {
             property("sonar.sources", "src")
-            property ("sonar.junit.reportPaths", "${project.buildDir}/test-results/test")
-            property ("sonar.coverage.jacoco.xmlReportPaths", "${project.buildDir}/jacoco/jacoco.xml")
+            property("sonar.junit.reportPaths", "${project.buildDir}/test-results/test")
+            property("sonar.coverage.jacoco.xmlReportPaths", "${project.buildDir}/jacoco/jacoco.xml")
         }
     }
 

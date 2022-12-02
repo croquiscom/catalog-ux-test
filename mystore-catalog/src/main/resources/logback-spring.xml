@@ -1,0 +1,113 @@
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <property name="LOG_PATTERN" value="%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+    <springProperty scope="context" name="log_level" source="logging.level.root"/>
+    <springProperty scope="context" name="service_name" source="zigzag.service_name"/>
+    <springProperty scope="context" name="app" source="spring.application.name"/>
+    <springProperty scope="context" name="profile" source="spring.profiles.active"/>
+
+    <!-- node.js server-side의 로그와 같은 format -->
+    <!-- https://github.com/croquiscom/zigzag-server-common/blob/master/src/ZLogger2.ts -->
+    <!--ex) [ZzL]{"log_level":"DEBUG","@timestamp":"2020-10-16T08:39:53.391Z","thread":"main","logger":"org.apache.http.impl.execchain.MainClientExec","message":"Executing request POST / HTTP/1.1","@e_idx":"service-category","service_name":"service-category"}-->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- https://github.com/logstash/logstash-logback-encoder#composite-encoderlayout -->
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <prefix class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+                <layout class="ch.qos.logback.classic.PatternLayout">
+                    <pattern>[ZzL]</pattern>
+                </layout>
+            </prefix>
+
+            <providers>
+                <logLevel>
+                    <fieldName>log_level</fieldName>
+                </logLevel>
+                <timestamp>
+                    <fieldName>@timestamp</fieldName>
+                    <timeZone>UTC</timeZone>
+                </timestamp>
+                <threadName>
+                    <fieldName>thread</fieldName>
+                </threadName>
+                <loggerName>
+                    <fieldName>logger</fieldName>
+                </loggerName>
+                <mdc/>
+                <message/>
+                <!-- ex> service_name을 elasticsearch index로 사용 -->
+                <stackTrace/>
+                <pattern>
+                    <omitEmptyFields>true</omitEmptyFields>
+                    <pattern>
+                        {
+                        "@e_idx": "${service_name}",
+                        "service_name": "${app}",
+                        "profile": "${profile}",
+                        "logType": "app",
+                        "tag": "${tag}",
+                        "error_message":"%ex{0}"
+                        }
+                    </pattern>
+                </pattern>
+            </providers>
+        </encoder>
+    </appender>
+
+    <appender name="SENTRY" class="io.sentry.logback.SentryAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <springProfile name="local | real-alpha">
+        <root level="${log_level}">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <springProfile name="alpha | beta | beta-rc | production">
+        <logger name="com.croquis.catalog" level="INFO" additivity="false">
+            <appender-ref ref="STDOUT"/>
+        </logger>
+
+        <logger name="org.hibernate" level="WARN" additivity="false">
+            <appender-ref ref="STDOUT"/>
+        </logger>
+
+        <logger name="com.zaxxer.hikari" level="WARN" additivity="false">
+            <appender-ref ref="STDOUT"/>
+        </logger>
+
+        <logger name="org.apache.kafka" level="WARN" additivity="false">
+            <appender-ref ref="STDOUT"/>
+        </logger>
+
+        <logger name="org.springframework.orm" level="WARN" additivity="false">
+            <appender-ref ref="STDOUT"/>
+        </logger>
+
+        <logger name="org.springframework.data" level="WARN" additivity="false">
+            <appender-ref ref="STDOUT"/>
+        </logger>
+
+        <logger name="org.springframework.kafka" level="WARN" additivity="false">
+            <appender-ref ref="STDOUT"/>
+        </logger>
+
+        <root level="${log_level}">
+            <appender-ref ref="STDOUT"/>
+        </root>
+    </springProfile>
+
+    <springProfile name="production">
+        <root level="ERROR">
+            <appender-ref ref="SENTRY"/>
+        </root>
+    </springProfile>
+</configuration>
