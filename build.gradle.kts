@@ -83,14 +83,6 @@ subprojects {
         testImplementation("io.mockk:mockk:1.12.1")
     }
 
-    sonarqube {
-        properties {
-            property("sonar.sources", "src")
-            property ("sonar.junit.reportPaths", "${project.buildDir}/test-results/test")
-            property ("sonar.coverage.jacoco.xmlReportPaths", "${project.buildDir}/jacoco/jacoco.xml")
-        }
-    }
-
     tasks.withType<KotlinCompile> {
         kotlinOptions {
             freeCompilerArgs = listOf("-Xjsr305=strict")
@@ -103,6 +95,14 @@ subprojects {
     }
 
     jacoco.toolVersion = "0.8.8"
+
+    sonarqube {
+        properties {
+            property("sonar.sources", "src")
+            property ("sonar.junit.reportPaths", "${project.buildDir}/test-results/test")
+            property ("sonar.coverage.jacoco.xmlReportPaths", "${project.buildDir}/jacoco/jacoco.xml")
+        }
+    }
 
     tasks.test {
         extensions.configure(JacocoTaskExtension::class) {
