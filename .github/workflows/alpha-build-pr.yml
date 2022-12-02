@@ -1,0 +1,198 @@
+name: 개발 빌드 및 PR 생성
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+env:
+  PHASE: 'alpha'
+  SERVICE_NAME: 'mystore-catalog-api'
+
+jobs:
+  start-notify:
+    name: start-notify
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Notify slack start
+        id: slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ALPHA_PRODUCT_SLACK_WEBHOOK_URL }}
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          text: 'STARTING'
+          fields: repo,message,commit,action,workflow
+
+  init:
+    needs: start-notify
+    name: prepare build step
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set Vars
+        id: vars
+        shell: bash
+        env:
+          GIT_COMMIT_HASH: ${{ github.sha }}
+        run: |
+          echo "::set-output name=date::$(TZ=Asia/Seoul date +%Y%m%d-%H%M)"
+          echo "::set-output name=short_hash::${GIT_COMMIT_HASH:0:10}"
+
+    outputs:
+      image_tag: ${{ steps.vars.outputs.date }}-${{ steps.vars.outputs.short_hash }}
+      sha: ${{ github.sha }}
+
+  build:
+    needs: init
+    name: build docker image
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [ api ]
+    env:
+      IMAGE_TAG: ${{ needs.init.outputs.image_tag }}
+
+    steps:
+      - name: Version Check
+        run: echo $IMAGE_TAG start!
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'adopt'
+          java-version: 11.0.10
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ZIGZAG_ALPHA_ECR_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_ZIGZAG_ALPHA_ECR_SECRET_KEY }}
+          aws-region: ap-northeast-2
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Gradle cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Gradle build
+        run: ./gradlew clean :${{ matrix.service }}:build -x test -x ktlintMainSourceSetCheck -x ktlintTestSourceSetCheck --no-daemon
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Docker cache
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: ${{ evn.SERVICE_NAME }} Build, tag, and push image to ECR
+        uses: docker/build-push-action@v2
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: service-${{ env.SERVICE_NAME }}-eks
+        with:
+          context: ./${{ matrix.service }}
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
+          build-args: |
+            STAGE=${{ env.PHASE }}
+            SERVICE_NAME=${{ env.SERVICE_NAME }}
+            TAG=${{ env.IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: [init, build]
+    name: apply docker image tag to zigzag-deploy repo
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        service: [ api ]
+    env:
+      IMAGE_TAG: ${{ needs.init.outputs.image_tag }}
+      HASH: ${{ needs.init.outputs.sha }}
+      SLACK_MESSAGE_ID: ${{ needs.init.outputs.slack_message_id }}
+      SRE_BOT_TOKEN: ${{ secrets.SRE_ACCOUNT_TOKEN }}
+
+    steps:
+      - name: Clone Deploy reposiory
+        uses: actions/checkout@v2
+        with:
+          repository: croquiscom/zigzag-deploy
+          ref: "main"
+          token: ${{ env.SRE_BOT_TOKEN }}
+
+      - name: Image Tag Change
+        uses: mikefarah/yq@v4.9.6
+        with:
+          cmd: yq e --inplace '.image.tag = "${{ env.IMAGE_TAG }}"' services/${{ env.SERVICE_NAME }}/values-alpha.yaml
+
+      - name: Yaml Check
+        run: |
+          cat services/${{ env.SERVICE_NAME }}/values-alpha.yaml
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ env.SRE_BOT_TOKEN }}
+          author: sre-croquis <sre-croquis@users.noreply.github.com>
+          commit-message: "deploy: alpha-zigzag-${{ env.SERVICE_NAME }} ${{ env.HASH }}"
+          base: main
+          branch: alpha-zigzag-${{ evn.SERVICE_NAME }}-${{ env.HASH }}
+          title: '[Deploy-alpha] zigzag-${{ env.SERVICE_NAME }}'
+          body: |
+            # Deploy ${{ env.SERVICE_NAME }} To Alpha Env
+            ## Stage
+            - *alpha*
+            ## Git Hash
+            - *${{ env.HASH }}*
+            ## Docker Image
+            - *${{ env.IMAGE_TAG }}*
+          labels: |
+            automerge
+
+  end-notify:
+    needs: [start-notify, deploy]
+    name: end-notify
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Notify slack success
+        if: success()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ALPHA_PRODUCT_SLACK_WEBHOOK_URL }}
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          text: 'SUCCESS'
+          fields: repo,message,commit,action,workflow
+
+      - name: Notify slack fail
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ALPHA_PRODUCT_SLACK_WEBHOOK_URL }}
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: 'FAIL'
+          fields: repo,message,commit,action,workflow

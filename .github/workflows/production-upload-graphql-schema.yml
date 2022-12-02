@@ -1,0 +1,37 @@
+name: Schema 운영 Upload
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  BRANCH: ${{ github.head_ref }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_UPLOAD_DOC_ACCESS_KEY }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_UPLOAD_DOC_SECRET_KEY }}
+  AWS_DEFAULT_REGION: ap-northeast-2
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: ['mystore-catalog']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Upload GraphQL schema (master)
+        run: |
+          aws s3 cp ${{matrix.service}}/src/main/resources/${{matrix.service}}.graphqls s3://doc.development.zigzag.kr/${{matrix.service}}/${{matrix.service}}.graphql --cache-control max-age=0 --content-type "text/plain; charset=utf-8"
+
+      - name: Notify failure
+        uses: 8398a7/action-slack@v3
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        with:
+          status: ${{ job.status }}
+          username: ${{matrix.service}}
+          channel: dnoti_product_build
+        if: failure()
