@@ -14,6 +14,19 @@ logging:
   level:
     root: info
 
+dgs:
+  graphql:
+    schema-locations:
+      - "classpath*:mystore-catalog.graphqls"
+    graphiql:
+      enabled: true
+    path: /graphql/**
+
+sentry:
+  stacktrace:
+    app.packages: "com.croquis.mystore"
+
+
 zigzag:
   service_name: service-catalog-ux
   server:

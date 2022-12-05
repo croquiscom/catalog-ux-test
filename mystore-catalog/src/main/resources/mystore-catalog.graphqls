@@ -1,0 +1,6 @@
+type Query {
+    product(id: ID!): String
+}
+
+
+
