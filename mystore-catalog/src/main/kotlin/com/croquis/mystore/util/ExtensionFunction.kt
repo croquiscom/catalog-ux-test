@@ -14,8 +14,6 @@ import java.net.URL
 import java.nio.ByteBuffer
 import java.util.Base64
 
-class ExtensionFunction {
-}
 val base64Decoder = Base64.getDecoder()!!
 
 enum class Strategy {
@@ -43,6 +41,7 @@ fun getObjectMapper(strategy: Strategy = Strategy.DEFAULT): ObjectMapper {
         Strategy.DEFAULT -> defaultObjectMapper
     }
 }
+
 private val defaultObjectMapper by lazy { defaultObjectMapper() }
 private val snakeCaseObjectMapper by lazy { snakeCaseObjectMapper() }
 private val camelCaseObjectMapper by lazy { camelCaseObjectMapper() }

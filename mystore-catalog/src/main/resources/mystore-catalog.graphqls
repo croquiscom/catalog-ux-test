@@ -1,6 +1,100 @@
 type Query {
-    product(id: ID!): String
+    mystore_pdp_atf_catalog_product(product_id: String): CatalogProductATFGroup!
 }
 
+type CatalogProductATFGroup {
+    product_id: ID!
+    shop_id: String!
+    product_image_list: [CatalogProductImage!]!
+    name: String!
+    discount_price: Int!
+    review_summary: ReviewSummary!
+    shipping_information: ShippingInformation!
+    payment_information: PaymentInformation!
+}
 
+type CatalogProductImage {
+    id: ID!
+    image_type: CatalogProductImageType!
+    origin_url: String!
+    image_url: String!
+}
 
+type ReviewSummary {
+    total_count: Int
+    ratings_average: Float
+}
+
+type ShippingInformation {
+    id: ID!
+}
+
+type PaymentInformation {
+    id: ID!
+    """무이자 할부 리스트"""
+    interest_free_list: [PaymentVendorInterestFreeInformation!]!
+}
+
+enum CatalogProductImageType {
+    MAIN
+    SUB
+    CONTENT
+}
+
+type PaymentVendorInterestFreeInformation {
+    "국가 코드"
+    country_code: String!
+    "금융사 코드"
+    financial_company_code: FinancialCompanyCode!
+    "할부 개월 리스트"
+    installment_month_list: [Int!]!
+    "최소 금액"
+    min_amount: Int!
+    "파트너 ID"
+    partner_id: ID!
+}
+
+enum FinancialCompanyCode {
+    B_BUSAN
+    B_CITY
+    B_DAEGU
+    B_GWANGJU
+    B_GYEONGNAM
+    B_HANA
+    B_HSBC
+    B_IBK
+    B_JEJU
+    B_JEONBUK
+    B_KAKAOBANK
+    B_KB
+    B_KBANK
+    B_KDB
+    B_KEB
+    B_NH
+    B_POST
+    B_SC
+    B_SHINHAN
+    B_SHINHYUP
+    B_SUHYUP
+    B_WOORI
+    C_BC
+    C_CITY
+    C_GWANGJU
+    C_HANA
+    C_HYUNDAI
+    C_JEJU
+    C_JEONBUK
+    C_KAKAOBANK
+    C_KB
+    C_KBANK
+    C_KDB
+    C_LOTTE
+    C_NH
+    C_POST
+    C_SAMSUNG
+    C_SHINHAN
+    C_SHINHYUP
+    C_SUHYUP
+    C_WOORI
+    UNKNOWN
+}
