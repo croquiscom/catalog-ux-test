@@ -78,6 +78,8 @@ subprojects {
     val logbackVersion = "1.2.0"
     val logbackJsonVersion = "0.1.5"
     val kotestVersion = "4.6.0"
+    val jacksonVersion = "2.12.1"
+    val datadog by configurations.creating
 
     dependencies {
         testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -85,6 +87,11 @@ subprojects {
         implementation("ch.qos.logback:logback-classic:${logbackVersion}")
         implementation("ch.qos.logback:logback-access:${logbackVersion}")
         implementation("ch.qos.logback.contrib:logback-jackson:${logbackJsonVersion}")
+        implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${jacksonVersion}")
+        datadog("com.datadoghq:dd-java-agent:0.105.0")
+        implementation("com.datadoghq:dd-trace-api:0.105.0")
+        implementation("com.datadoghq:dd-trace-ot:0.105.0")
+
         testImplementation("io.kotest:kotest-runner-junit5:${kotestVersion}")
         testImplementation("io.kotest:kotest-assertions-core:${kotestVersion}")
         testImplementation("io.kotest:kotest-property:${kotestVersion}")
