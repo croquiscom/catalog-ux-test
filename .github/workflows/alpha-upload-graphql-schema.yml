@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: ['mystore-catalog']
+        service: ['mystore']
 
     steps:
       - name: Checkout code
