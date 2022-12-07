@@ -103,7 +103,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
 
-      - name: ${{ evn.SERVICE_NAME }} Build, tag, and push image to ECR
+      - name: ${{ env.SERVICE_NAME }} Build, tag, and push image to ECR
         uses: docker/build-push-action@v2
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -158,7 +158,7 @@ jobs:
           author: sre-croquis <sre-croquis@users.noreply.github.com>
           commit-message: "deploy: alpha-zigzag-${{ env.SERVICE_NAME }} ${{ env.HASH }}"
           base: main
-          branch: alpha-zigzag-${{ evn.SERVICE_NAME }}-${{ env.HASH }}
+          branch: alpha-zigzag-${{ env.SERVICE_NAME }}-${{ env.HASH }}
           title: '[Deploy-alpha] zigzag-${{ env.SERVICE_NAME }}'
           body: |
             # Deploy ${{ env.SERVICE_NAME }} To Alpha Env
