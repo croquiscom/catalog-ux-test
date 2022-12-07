@@ -1,6 +1,6 @@
 #!/bin/sh
 DATADOG_ENV=zigzag-$SPRING_PROFILES_ACTIVE
-SERVICE_NAME=catalog-api
+SERVICE_NAME=mystore-catalog-api
 
 echo $SERVICE_NAME
 echo $SPRING_PROFILES_ACTIVE
