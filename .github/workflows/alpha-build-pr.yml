@@ -11,23 +11,7 @@ env:
   SERVICE_NAME: 'mystore-catalog-api'
 
 jobs:
-  start-notify:
-    name: start-notify
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Notify slack start
-        id: slack
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ALPHA_PRODUCT_SLACK_WEBHOOK_URL }}
-        uses: 8398a7/action-slack@v3
-        with:
-          status: success
-          text: 'STARTING'
-          fields: repo,message,commit,action,workflow
-
   init:
-    needs: start-notify
     name: prepare build step
     runs-on: ubuntu-latest
 
@@ -131,7 +115,6 @@ jobs:
     env:
       IMAGE_TAG: ${{ needs.init.outputs.image_tag }}
       HASH: ${{ needs.init.outputs.sha }}
-      SLACK_MESSAGE_ID: ${{ needs.init.outputs.slack_message_id }}
       SRE_BOT_TOKEN: ${{ secrets.SRE_ACCOUNT_TOKEN }}
 
     steps:
@@ -170,29 +153,3 @@ jobs:
             - *${{ env.IMAGE_TAG }}*
           labels: |
             automerge
-
-  end-notify:
-    needs: [start-notify, deploy]
-    name: end-notify
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Notify slack success
-        if: success()
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ALPHA_PRODUCT_SLACK_WEBHOOK_URL }}
-        uses: 8398a7/action-slack@v3
-        with:
-          status: success
-          text: 'SUCCESS'
-          fields: repo,message,commit,action,workflow
-
-      - name: Notify slack fail
-        if: failure()
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ALPHA_PRODUCT_SLACK_WEBHOOK_URL }}
-        uses: 8398a7/action-slack@v3
-        with:
-          status: failure
-          text: 'FAIL'
-          fields: repo,message,commit,action,workflow
