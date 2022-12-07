@@ -1,2 +1,2 @@
 rootProject.name = "catalog-ux"
-include("mystore")
+include("mystore", "api")
