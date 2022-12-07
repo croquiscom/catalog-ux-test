@@ -29,6 +29,9 @@ tasks {
     getByName("jar").dependsOn(copyDatadog.name)
 }
 
+val logstashLogbackVersion: String? by ext
+val sentryVersion: String? by ext
+
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-validation")
@@ -36,14 +39,8 @@ dependencies {
     implementation("com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter")
     implementation("com.netflix.graphql.dgs:graphql-dgs-extended-scalars")
     testImplementation("com.netflix.graphql.dgs:graphql-dgs-client:5.4.0")
-}
-
-val logstashLogbackVersion: String? by ext
-val sentryVersion: String? by ext
-
-
-dependencies {
     implementation("net.logstash.logback:logstash-logback-encoder:${logstashLogbackVersion}")
     implementation("io.sentry:sentry-logback:${sentryVersion}")
     implementation("io.sentry:sentry-spring-boot-starter:${sentryVersion}")
 }
+
