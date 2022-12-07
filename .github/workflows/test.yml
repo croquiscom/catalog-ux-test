@@ -28,18 +28,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Run infra
-        run: ./gradlew composeUp
-
-      - name: Check running containers
-        run: docker ps -a
-
-      - name: Flyway Clean
-        run: ./gradlew flywayClean
-
-      - name: Flyway Migrate
-        run: ./gradlew flywayMigrate
-
       - name: Run test
         run: SPRING_PROFILES_ACTIVE=test ./gradlew test -x ktlintMainSourceSetCheck -x ktlintTestSourceSetCheck
 
