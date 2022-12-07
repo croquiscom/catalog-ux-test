@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [ api ]
+        service: [ mystore ]
     env:
       IMAGE_TAG: ${{ needs.init.outputs.image_tag }}
 
@@ -120,7 +120,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        service: [ api ]
+        service: [ mystore ]
     if: startsWith(github.event.ref, 'refs/tags/v')
     env:
       INPUT_REF: ${{ github.event.ref }}

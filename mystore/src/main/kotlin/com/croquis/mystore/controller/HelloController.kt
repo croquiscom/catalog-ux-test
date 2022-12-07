@@ -11,7 +11,6 @@ class HelloController(
     fun hello(): Map<String, Any> {
         return mapOf(
             "status" to "ok",
-            "tag" to System.getProperty("tag", ""),
             "profile" to env.activeProfiles,
         )
     }
